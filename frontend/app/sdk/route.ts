@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 
-// Inline the SDK so it works on Vercel (no filesystem access to ../mobile-sdk/)
-// NEXT_PUBLIC_BACKEND_URL is injected at build time from Vercel env vars
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+// Normalize URL — ensure it always has https:// prefix
+function normalizeUrl(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return 'https://' + url;
+}
+
+const BACKEND_URL = normalizeUrl(process.env.NEXT_PUBLIC_BACKEND_URL || '');
 
 export async function GET() {
   const html = `<!DOCTYPE html>

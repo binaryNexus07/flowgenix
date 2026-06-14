@@ -118,10 +118,12 @@ class GPSSimulator:
         print("[Simulator] Stopped")
 
     def _save_ping(self, ping: dict):
-        """Write one GPS ping directly to SQLite — no HTTP, works on any host."""
+        """Write one GPS ping directly to SQLite — WAL mode prevents lock conflicts."""
         now = datetime.now(timezone.utc).isoformat()
         try:
-            conn = sqlite3.connect(DB_PATH, timeout=5)
+            conn = sqlite3.connect(DB_PATH, timeout=10)
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=5000")
             conn.execute(
                 "INSERT INTO gps_pings "
                 "(device_id, lat, lon, accuracy, timestamp, created_at) "
@@ -134,6 +136,7 @@ class GPSSimulator:
             self.pings_sent += 1
         except Exception as e:
             print(f"[Simulator] DB write error: {e}")
+
 
     def _run_loop(self):
         """Background thread: step all devices and write pings to DB."""

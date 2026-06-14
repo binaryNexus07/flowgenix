@@ -40,26 +40,36 @@ CREATE_INDEX         = "CREATE INDEX IF NOT EXISTS idx_created_at ON gps_pings(c
 CREATE_SNAPSHOT_IDX  = "CREATE INDEX IF NOT EXISTS idx_snapshot_time ON density_snapshots(snapshot_time);"
 
 
+async def _configure_db(db):
+    """Enable WAL mode + busy timeout — fixes concurrent write locking."""
+    await db.execute("PRAGMA journal_mode=WAL")
+    await db.execute("PRAGMA busy_timeout=5000")
+    await db.execute("PRAGMA synchronous=NORMAL")
+
+
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
+        await _configure_db(db)
         await db.execute(CREATE_PINGS_TABLE)
         await db.execute(CREATE_SNAPSHOTS_TABLE)
         await db.execute(CREATE_INDEX)
         await db.execute(CREATE_SNAPSHOT_IDX)
         await db.commit()
-    print("[DB] Initialized SQLite database")
+    print("[DB] Initialized SQLite database with WAL mode")
 
 
 async def save_gps_ping(device_id: str, lat: float, lon: float,
                         accuracy: float, timestamp: str):
     now = datetime.now(timezone.utc).isoformat()
     async with aiosqlite.connect(DB_PATH) as db:
+        await _configure_db(db)
         await db.execute(
             "INSERT INTO gps_pings (device_id, lat, lon, accuracy, timestamp, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
             (device_id, lat, lon, accuracy, timestamp, now)
         )
         await db.commit()
+
 
 
 async def get_recent_pings(seconds: int = 120) -> List[Dict]:

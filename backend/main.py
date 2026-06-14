@@ -112,19 +112,25 @@ async def ingest_gps(payload: dict):
 
         await save_gps_ping(device_id, lat, lon, accuracy, ts)
 
-        # Quick density for this zone
-        pings = await get_recent_pings(seconds=120)
-        score = compute_crowd_score(pings)
-        level = "HIGH" if score > 70 else "MEDIUM" if score > 35 else "LOW"
+        # Quick density (non-critical — if it fails, still return 200)
+        try:
+            pings = await get_recent_pings(seconds=120)
+            score = compute_crowd_score(pings)
+            level = "HIGH" if score > 70 else "MEDIUM" if score > 35 else "LOW"
+            active = len(set(p["device_id"] for p in pings))
+        except Exception:
+            score, level, active = 0, "LOW", 1
 
         return {
             "status": "received",
             "zone_density": level,
             "crowd_score": score,
-            "active_devices": len(set(p["device_id"] for p in pings))
+            "active_devices": active
         }
     except Exception as e:
+        print(f"[GPS] Error: {e}")
         return JSONResponse({"error": str(e)}, status_code=500)
+
 
 
 # ─── Heatmap ──────────────────────────────────────────────────────────────────
