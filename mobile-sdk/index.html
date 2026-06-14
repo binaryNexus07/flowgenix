@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>FlowGenix SDK — Join the Crowd</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #050a14;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .logo {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #00d4ff, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .tagline {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .status-card {
+      background: #0d1526;
+      border: 1px solid #1e2d4a;
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+    }
+
+    .pulse-ring {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #0d1526;
+      border: 3px solid #00d4ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      position: relative;
+      font-size: 2rem;
+    }
+
+    .pulse-ring.active {
+      animation: pulse 2s ease-in-out infinite;
+      border-color: #00ff88;
+    }
+
+    .pulse-ring.error { border-color: #ff4757; }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+      50% { box-shadow: 0 0 0 20px rgba(0, 255, 136, 0); }
+    }
+
+    .status-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .status-sub {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-top: 1px solid #1e2d4a;
+      font-size: 0.82rem;
+    }
+
+    .stat-label { color: #64748b; }
+    .stat-value { color: #00d4ff; font-weight: 600; font-family: monospace; }
+    .stat-value.green { color: #00ff88; }
+    .stat-value.red { color: #ff4757; }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.2s;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #00d4ff, #7c3aed);
+      color: white;
+    }
+
+    .btn-stop {
+      background: #1e2d4a;
+      color: #ff4757;
+      border: 1px solid #ff4757;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .device-id {
+      font-size: 0.7rem;
+      color: #334155;
+      margin-top: 20px;
+      font-family: monospace;
+      word-break: break-all;
+    }
+
+    .density-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .density-HIGH { background: #ff4757; color: white; }
+    .density-MEDIUM { background: #ffa502; color: black; }
+    .density-LOW { background: #2ed573; color: black; }
+    .density-UNKNOWN { background: #1e2d4a; color: #64748b; }
+
+    .server-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 10px 12px;
+      background: #0a1020;
+      border-radius: 8px;
+      border: 1px solid #1e2d4a;
+    }
+
+    .server-row input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #00d4ff;
+      font-size: 0.78rem;
+      font-family: monospace;
+      outline: none;
+    }
+
+    .server-row label {
+      font-size: 0.7rem;
+      color: #64748b;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+<div class="logo">⚡ FlowGenix</div>
+<p class="tagline">Hyperlocal Crowd Intelligence · Contribute your signal</p>
+
+<div class="status-card">
+
+  <!-- Server URL config (editable) -->
+  <div class="server-row">
+    <label>API:</label>
+    <input type="text" id="backendUrlInput" value="" placeholder="http://10.34.4.145:8000" />
+    <button onclick="saveUrl()" style="background:#00d4ff;color:#000;border:none;padding:4px 8px;border-radius:6px;font-size:0.7rem;font-weight:700;cursor:pointer;">SET</button>
+  </div>
+
+  <div class="pulse-ring" id="pulseRing">📍</div>
+  <div class="status-title" id="statusTitle">Ready to Start</div>
+  <div class="status-sub" id="statusSub">Tap the button below to share your location and join the crowd intelligence network.</div>
+
+  <div class="stat-row">
+    <span class="stat-label">📡 Connection</span>
+    <span class="stat-value" id="connStatus">Idle</span>
+  </div>
+  <div class="stat-row">
+    <span class="stat-label">📍 GPS Accuracy</span>
+    <span class="stat-value" id="accuracy">—</span>
+  </div>
+  <div class="stat-row">
+    <span class="stat-label">🔢 Pings Sent</span>
+    <span class="stat-value green" id="pingCount">0</span>
+  </div>
+  <div class="stat-row">
+    <span class="stat-label">🌐 Zone Density</span>
+    <div><span class="density-badge density-UNKNOWN" id="densityBadge">UNKNOWN</span></div>
+  </div>
+  <div class="stat-row">
+    <span class="stat-label">👥 Active Devices</span>
+    <span class="stat-value" id="activeDevices">—</span>
+  </div>
+
+  <button class="btn btn-start" id="mainBtn" onclick="toggleTracking()">
+    🚀 Start Sharing Location
+  </button>
+
+  <div class="device-id" id="deviceIdDisplay"></div>
+</div>
+
+<script>
+  // ─── Backend URL: auto-detect from where the page is served ─────────────
+  // If opened on phone via http://10.34.4.145:3000  →  backend = http://10.34.4.145:8000
+  // If opened on laptop via http://localhost:3000    →  backend = http://localhost:8000
+  // If opened as file:// (direct HTML)              →  use stored URL or fallback
+  function detectBackendUrl() {
+    const stored = localStorage.getItem('flowgenix_backend_url');
+    if (stored) return stored;
+
+    const proto = window.location.protocol; // 'http:' or 'https:'
+    const hostname = window.location.hostname;
+
+    if (!hostname || hostname === '') {
+      // Opened as a local file
+      return 'http://10.34.4.145:8000';
+    }
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      // On same machine — always http is fine for localhost
+      return 'http://localhost:8000';
+    }
+    // On network (phone etc.) — match the protocol of the page
+    // If page is https, backend must also be https (or use localhost proxy)
+    const backendProto = proto === 'https:' ? 'https' : 'http';
+    return `${backendProto}://${hostname}:8000`;
+  }
+
+  let BACKEND_URL = detectBackendUrl();
+  document.getElementById('backendUrlInput').value = BACKEND_URL;
+
+  function saveUrl() {
+    const val = document.getElementById('backendUrlInput').value.trim();
+    if (val) {
+      BACKEND_URL = val;
+      localStorage.setItem('flowgenix_backend_url', val);
+      testConnection();
+    }
+  }
+
+  async function testConnection() {
+    document.getElementById('connStatus').textContent = 'Testing...';
+    try {
+      const r = await fetch(`${BACKEND_URL}/api/health`, { signal: AbortSignal.timeout(4000) });
+      if (r.ok) {
+        document.getElementById('connStatus').textContent = 'Server OK ✓';
+        document.getElementById('connStatus').style.color = '#00ff88';
+      } else {
+        throw new Error('bad status');
+      }
+    } catch(e) {
+      document.getElementById('connStatus').textContent = 'Cannot reach server';
+      document.getElementById('connStatus').style.color = '#ff4757';
+    }
+  }
+
+  const PING_INTERVAL_MS = 5000;
+
+  // ─── Device ID ───────────────────────────────────────────────────────────
+  function getDeviceId() {
+    let id = localStorage.getItem('flowgenix_device_id');
+    if (!id) {
+      id = 'mob-' + Math.random().toString(36).substr(2, 12);
+      localStorage.setItem('flowgenix_device_id', id);
+    }
+    return id;
+  }
+
+  const DEVICE_ID = getDeviceId();
+  document.getElementById('deviceIdDisplay').textContent = 'Device: ' + DEVICE_ID;
+
+  // Test on load
+  testConnection();
+
+  // ─── State ───────────────────────────────────────────────────────────────
+  let tracking = false;
+  let pingCount = 0;
+  let watchId = null;
+  let pingTimer = null;
+  let lastPosition = null;
+
+  function toggleTracking() {
+    if (tracking) stopTracking(); else startTracking();
+  }
+
+  function startTracking() {
+    if (!navigator.geolocation) { setError('GPS not available on this device'); return; }
+
+    tracking = true;
+    document.getElementById('mainBtn').className = 'btn btn-stop';
+    document.getElementById('mainBtn').textContent = '⛔ Stop Sharing';
+    document.getElementById('statusTitle').textContent = 'Acquiring GPS...';
+    document.getElementById('statusSub').textContent = 'Getting your location. Please allow location access if prompted.';
+    document.getElementById('connStatus').textContent = 'Connecting';
+    document.getElementById('pulseRing').className = 'pulse-ring';
+
+    watchId = navigator.geolocation.watchPosition(
+      onPosition,
+      onGPSError,
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+    );
+    pingTimer = setInterval(() => { if (lastPosition) sendPing(lastPosition); }, PING_INTERVAL_MS);
+  }
+
+  function stopTracking() {
+    tracking = false;
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    if (pingTimer) clearInterval(pingTimer);
+    watchId = null; pingTimer = null;
+    document.getElementById('mainBtn').className = 'btn btn-start';
+    document.getElementById('mainBtn').textContent = '🚀 Start Sharing Location';
+    document.getElementById('statusTitle').textContent = 'Sharing Stopped';
+    document.getElementById('statusSub').textContent = 'Thanks for contributing! Tap to start again.';
+    document.getElementById('pulseRing').className = 'pulse-ring';
+    document.getElementById('connStatus').textContent = 'Idle';
+  }
+
+  function onPosition(position) {
+    lastPosition = position;
+    document.getElementById('accuracy').textContent = position.coords.accuracy.toFixed(0) + 'm';
+    document.getElementById('statusTitle').textContent = 'Live — Sending Data';
+    document.getElementById('statusSub').textContent = 'Your anonymized location is helping map crowd density in real time.';
+    document.getElementById('pulseRing').className = 'pulse-ring active';
+    document.getElementById('pulseRing').textContent = '📡';
+    sendPing(position);
+  }
+
+  function onGPSError(err) { setError('GPS Error: ' + err.message); }
+
+  async function sendPing(position) {
+    if (!tracking) return;
+    const payload = {
+      device_id: DEVICE_ID,
+      lat: position.coords.latitude,
+      lon: position.coords.longitude,
+      accuracy: position.coords.accuracy || 10,
+      timestamp: new Date().toISOString()
+    };
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/gps`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(5000)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        pingCount++;
+        document.getElementById('pingCount').textContent = pingCount;
+        document.getElementById('connStatus').textContent = 'Connected ✓';
+        document.getElementById('connStatus').style.color = '#00ff88';
+        const density = data.zone_density || 'UNKNOWN';
+        const badge = document.getElementById('densityBadge');
+        badge.textContent = density;
+        badge.className = 'density-badge density-' + density;
+        if (data.active_devices !== undefined) {
+          document.getElementById('activeDevices').textContent = data.active_devices;
+        }
+      } else {
+        document.getElementById('connStatus').textContent = 'Server Error ' + res.status;
+        document.getElementById('connStatus').style.color = '#ff4757';
+      }
+    } catch (e) {
+      document.getElementById('connStatus').textContent = 'Cannot reach server';
+      document.getElementById('connStatus').style.color = '#ffa502';
+    }
+  }
+
+  function setError(msg) {
+    document.getElementById('statusTitle').textContent = 'Error';
+    document.getElementById('statusSub').textContent = msg;
+    document.getElementById('pulseRing').className = 'pulse-ring error';
+    document.getElementById('pulseRing').textContent = '⚠️';
+  }
+</script>
+</body>
+</html>
