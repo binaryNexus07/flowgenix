@@ -15,7 +15,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from database import init_db, save_gps_ping, get_recent_pings, get_ping_count
+from database import (init_db, save_gps_ping, get_recent_pings,
+                       get_ping_count, save_density_snapshot, get_snapshot_history)
 from density_engine import compute_heatmap, detect_hotspots, compute_crowd_score
 from websocket_manager import ConnectionManager
 from simulator import GPSSimulator
@@ -47,17 +48,27 @@ simulator = GPSSimulator()
 
 # ─── Background broadcast loop ─────────────────────────────────────────────────
 async def broadcast_loop():
-    """Push real-time updates to all connected WebSocket clients every 3 seconds."""
+    """Push real-time updates to all connected WebSocket clients every 3 seconds.
+       Also saves a density snapshot every ~30 seconds for historical trend data.
+    """
+    broadcast_count = 0
     while True:
         try:
             await asyncio.sleep(3)
             pings = await get_recent_pings(seconds=120)
             if not pings:
                 continue
-            heatmap = compute_heatmap(pings)
+            heatmap  = compute_heatmap(pings)
             hotspots = detect_hotspots(pings)
-            count = await get_ping_count(seconds=60)
-            score = compute_crowd_score(pings)
+            count    = await get_ping_count(seconds=60)
+            score    = compute_crowd_score(pings)
+            level    = "HIGH" if score > 70 else "MEDIUM" if score > 35 else "LOW"
+            peak     = hotspots[0] if hotspots else None
+            peak_zone = {
+                "lat": peak["lat"], "lon": peak["lon"],
+                "label": peak["label"], "devices": peak["device_count"]
+            } if peak else None
+
             payload = {
                 "type": "density_update",
                 "heatmap_points": heatmap,
@@ -66,10 +77,18 @@ async def broadcast_loop():
                     "active_devices": count,
                     "hotspot_count": len(hotspots),
                     "crowd_score": score,
-                    "timestamp": datetime.now(timezone.utc).isoformat()
+                    "density_level": level,
+                    "peak_zone": peak_zone,
+                    "last_updated": datetime.now(timezone.utc).isoformat()
                 }
             }
             await manager.broadcast(json.dumps(payload))
+
+            # Save snapshot every 10 broadcasts (~30 seconds)
+            broadcast_count += 1
+            if broadcast_count % 10 == 0:
+                await save_density_snapshot(score, count, len(hotspots), level, peak_zone)
+
         except Exception as e:
             print(f"[broadcast] error: {e}")
 
@@ -189,10 +208,18 @@ async def demo_status():
     }
 
 
+# ─── Historical Data ─────────────────────────────────────────────────────────
+@app.get("/api/history")
+async def get_history(hours: int = Query(default=24, le=168)):
+    """Return density snapshots for trend analysis. Default: last 24h, max 7 days."""
+    snapshots = await get_snapshot_history(hours=hours)
+    return {"snapshots": snapshots, "count": len(snapshots), "hours": hours}
+
+
 # ─── Health ───────────────────────────────────────────────────────────────────
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "FlowGenix API", "version": "1.0.0"}
+    return {"status": "ok", "service": "FlowGenix API", "version": "2.0.0"}
 
 
 # ─── WebSocket ────────────────────────────────────────────────────────────────
@@ -200,12 +227,13 @@ async def health():
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
-        # Send initial data immediately on connect
-        pings = await get_recent_pings(seconds=120)
-        heatmap = compute_heatmap(pings)
+        pings    = await get_recent_pings(seconds=120)
+        heatmap  = compute_heatmap(pings)
         hotspots = detect_hotspots(pings)
-        count = await get_ping_count(seconds=60)
-        score = compute_crowd_score(pings)
+        count    = await get_ping_count(seconds=60)
+        score    = compute_crowd_score(pings)
+        level    = "HIGH" if score > 70 else "MEDIUM" if score > 35 else "LOW"
+        peak     = hotspots[0] if hotspots else None
         await websocket.send_text(json.dumps({
             "type": "density_update",
             "heatmap_points": heatmap,
@@ -214,13 +242,17 @@ async def websocket_endpoint(websocket: WebSocket):
                 "active_devices": count,
                 "hotspot_count": len(hotspots),
                 "crowd_score": score,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "density_level": level,
+                "peak_zone": {"lat": peak["lat"], "lon": peak["lon"],
+                              "label": peak["label"], "devices": peak["device_count"]} if peak else None,
+                "last_updated": datetime.now(timezone.utc).isoformat()
             }
         }))
         while True:
-            await websocket.receive_text()  # keep alive
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
 
 
 if __name__ == "__main__":

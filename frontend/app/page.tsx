@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import {
   Activity, Zap, MapPin, Users, AlertTriangle,
   TrendingUp, Navigation, Shield, Truck, Building2,
-  Radio, ChevronRight, Play, Square, RefreshCw, Wifi, WifiOff
+  Radio, Play, Square, RefreshCw, Wifi, WifiOff
 } from "lucide-react";
 
 const LiveMap = dynamic(() => import("@/components/LiveMap"), { ssr: false });
@@ -159,7 +160,18 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Sub-page links */}
+          <Link href="/hotspots" className="flex items-center gap-1.5 text-xs text-orange-400 border border-[#1e2d4a] px-3 py-1.5 rounded-lg hover:border-orange-500/40 hover:bg-orange-500/5 transition-colors">
+            <AlertTriangle size={11} /> Hotspots
+          </Link>
+          <Link href="/logistics" className="flex items-center gap-1.5 text-xs text-[#00d4ff] border border-[#1e2d4a] px-3 py-1.5 rounded-lg hover:border-[#00d4ff]/40 hover:bg-[#00d4ff]/5 transition-colors">
+            <Truck size={11} /> Logistics
+          </Link>
+          <Link href="/real-estate" className="flex items-center gap-1.5 text-xs text-purple-400 border border-[#1e2d4a] px-3 py-1.5 rounded-lg hover:border-purple-500/40 hover:bg-purple-500/5 transition-colors">
+            <Building2 size={11} /> Real Estate
+          </Link>
+          <div className="w-px h-4 bg-[#1e2d4a]" />
           {/* WS status */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#1e2d4a] bg-[#0d1526]">
             {wsStatus === "live"

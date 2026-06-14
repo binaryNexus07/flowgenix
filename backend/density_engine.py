@@ -164,7 +164,8 @@ def detect_hotspots(pings: List[Dict]) -> List[Dict]:
         unique_devices = len(set(p["device_id"] for p in cluster_pings))
         ping_count = len(cluster_pings)
 
-        density = "HIGH" if unique_devices >= 10 else "MEDIUM" if unique_devices >= 4 else "LOW"
+        # Dynamic radius: tighter zones for better pinpointing
+        radius_m = 30 if density == "LOW" else 50 if density == "MEDIUM" else 70
 
         hotspots.append({
             "id": f"hotspot_{label}",
@@ -173,9 +174,10 @@ def detect_hotspots(pings: List[Dict]) -> List[Dict]:
             "device_count": unique_devices,
             "ping_count": ping_count,
             "density": density,
-            "radius_m": int(DBSCAN_EPS_KM * 1000),
+            "radius_m": radius_m,
             "label": _zone_label(label)
         })
+
 
     # Sort by device count desc
     hotspots.sort(key=lambda x: x["device_count"], reverse=True)
